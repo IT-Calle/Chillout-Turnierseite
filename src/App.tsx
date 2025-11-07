@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import {
   Box,
   Container,
@@ -22,106 +21,38 @@ import {
   ModalBody,
   ModalCloseButton,
 } from '@chakra-ui/react'
-import type { Player, TournamentSettings, TournamentPhase, Match } from './types'
-import { saveTournamentToCache, loadTournamentFromCache, clearTournamentCache, hasCachedTournament } from './utils/cache'
 import PlayerManagement from './components/PlayerManagement'
 import TournamentSettingsComponent from './components/TournamentSettings'
 import SeedingSelection from './components/SeedingSelection'
 import RoundRobinTable from './components/RoundRobinTable'
 import KnockoutMatrix from './components/KnockoutMatrix'
+import { useTournamentState } from './hooks/useTournamentState'
 
 function App() {
-  const [currentPhase, setCurrentPhase] = useState<TournamentPhase>('player-management')
-  const [players, setPlayers] = useState<Player[]>([])
-  const [tournamentSettings, setTournamentSettings] = useState<TournamentSettings>({
-    format: 'best-of-3',
-    hasPointsRound: false,
-    seedingType: 'automatic'
-  })
-  const [matches, setMatches] = useState<Match[]>([])
-  const [showCacheAlert, setShowCacheAlert] = useState(false)
   const { isOpen: isRestartModalOpen, onOpen: onRestartModalOpen, onClose: onRestartModalClose } = useDisclosure()
+  const {
+    currentPhase,
+    players,
+    settings: tournamentSettings,
+    matches,
+    showCacheAlert,
+    setPlayers,
+    setSettings: setTournamentSettings,
+    setMatches,
+    handlePlayersConfirm,
+    handleSettingsConfirm,
+    handleSeedingConfirm,
+    handleBackToPlayerManagement,
+    handleBackToSettings,
+    loadCachedTournament,
+    startNewTournament,
+    dismissCacheAlert
+  } = useTournamentState()
   const tournamentName = 'Dart Turnier'
 
-  // Lade Turnier aus Cache beim Start
-  useEffect(() => {
-    if (hasCachedTournament()) {
-      const cache = loadTournamentFromCache()
-      if (cache) {
-        setShowCacheAlert(true)
-      }
-    }
-  }, [])
-
-  // Speichere Turnier automatisch im Cache bei Änderungen
-  useEffect(() => {
-    if (currentPhase !== 'player-management' && players.length > 0) {
-      saveTournamentToCache(currentPhase, players, tournamentSettings, matches)
-    }
-  }, [currentPhase, players, tournamentSettings, matches])
-
-  // Lade gespeichertes Turnier
-  const loadCachedTournament = () => {
-    const cache = loadTournamentFromCache()
-    if (cache) {
-      setCurrentPhase(cache.phase)
-      setPlayers(cache.players)
-      setTournamentSettings(cache.settings)
-      setMatches(cache.matches)
-      setShowCacheAlert(false)
-    }
-  }
-
-  // Starte neues Turnier
-  const startNewTournament = () => {
-    clearTournamentCache()
-    setCurrentPhase('player-management')
-    setPlayers([])
-    setTournamentSettings({
-      format: 'best-of-3',
-      hasPointsRound: false,
-      seedingType: 'automatic'
-    })
-    setMatches([])
-    setShowCacheAlert(false)
+  const handleRestartConfirmation = () => {
+    startNewTournament()
     onRestartModalClose()
-  }
-
-  const handlePlayersConfirm = (newPlayers: Player[]) => {
-    setPlayers(newPlayers)
-    setCurrentPhase('settings')
-  }
-
-  const handleSettingsConfirm = (settings: TournamentSettings) => {
-    setTournamentSettings(settings)
-    if (settings.seedingType === 'manual') {
-      setCurrentPhase('seeding')
-    } else {
-      // Automatische Auslosung
-      const shuffledPlayers = [...players].sort(() => Math.random() - 0.5)
-      const playersWithSeeds = shuffledPlayers.map((player, index) => ({
-        ...player,
-        seed: index + 1
-      }))
-      setPlayers(playersWithSeeds)
-      setCurrentPhase('tournament')
-    }
-  }
-
-  const handleSeedingConfirm = (seededPlayers: Player[]) => {
-    setPlayers(seededPlayers)
-    setCurrentPhase('tournament')
-  }
-
-  const handleBackToPlayerManagement = () => {
-    setCurrentPhase('player-management')
-    setPlayers([])
-    setMatches([])
-  }
-
-  const handleBackToSettings = () => {
-    setCurrentPhase('settings')
-    setMatches([])
   }
 
   const renderCurrentPhase = () => {
@@ -292,7 +223,7 @@ function App() {
                 <Button size="sm" colorScheme="blue" onClick={loadCachedTournament}>
                   Fortsetzen
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowCacheAlert(false)}>
+                <Button size="sm" variant="outline" onClick={dismissCacheAlert}>
                   Neu starten
                 </Button>
               </HStack>
@@ -300,7 +231,7 @@ function App() {
                 position="absolute"
                 right="8px"
                 top="8px"
-                onClick={() => setShowCacheAlert(false)}
+                onClick={dismissCacheAlert}
               />
             </Alert>
           </Box>
@@ -335,7 +266,7 @@ function App() {
             <Button variant="ghost" mr={3} onClick={onRestartModalClose}>
               Abbrechen
             </Button>
-            <Button colorScheme="red" onClick={startNewTournament}>
+            <Button colorScheme="red" onClick={handleRestartConfirmation}>
               Ja, neu starten
             </Button>
           </ModalFooter>
