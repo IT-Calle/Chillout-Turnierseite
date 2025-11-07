@@ -79,7 +79,6 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
         <SvgKnockoutRenderer
           rounds={rounds}
           currentRound={currentRound}
-          settings={settings}
           onScoreUpdate={handleScoreUpdate}
           getRoundName={getRoundName}
         />

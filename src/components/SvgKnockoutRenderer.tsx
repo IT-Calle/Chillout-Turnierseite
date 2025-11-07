@@ -1,11 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Match, TournamentSettings } from '../types'
+import type { Match } from '../types'
+import SvgMatchCard from './svg/MatchCard'
+import {
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  HORIZONTAL_SPACING,
+  START_X,
+  START_Y,
+  VERTICAL_SPACING,
+} from './svg/constants'
+import type { ScoreUpdateHandler } from './svg/types'
 
 interface SvgKnockoutRendererProps {
   rounds: Match[][]
   currentRound: number
-  settings: TournamentSettings
-  onScoreUpdate: (matchId: string, playerId: string, increment: boolean) => void
+  onScoreUpdate: ScoreUpdateHandler
   getRoundName: (roundIndex: number) => string
 }
 
@@ -13,18 +22,6 @@ interface Selection {
   roundIdx: number
   matchIdx: number
 }
-
-const CARD_WIDTH = 220
-const CARD_HEIGHT = 96
-const HORIZONTAL_SPACING = 260
-const VERTICAL_SPACING = 48
-const START_X = 80
-const START_Y = 100
-const CONTROL_SIZE = 16
-const CONTROL_GAP = 6
-const SCORE_HEIGHT = 22
-const SCORE_BOX_WIDTH = 44
-const SCORE_STACK_WIDTH = CONTROL_SIZE * 2 + SCORE_BOX_WIDTH + CONTROL_GAP * 2
 
 const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
   rounds,
@@ -174,114 +171,6 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
     setSelection(ensureSelection({ roundIdx, matchIdx }))
   }
 
-  const renderScoreStack = (
-    matchId: string,
-    player: Match['player1'],
-    scoreValue: number,
-    stackX: number,
-    stackY: number,
-    key: string
-  ) => {
-    const playerReady = Boolean(player && player.name !== 'TBD')
-    const canDecrement = playerReady && scoreValue > 0
-    const scoreBoxWidth = SCORE_BOX_WIDTH
-    const minusX = stackX
-    const scoreBoxX = stackX + CONTROL_SIZE + CONTROL_GAP
-    const plusX = scoreBoxX + SCORE_BOX_WIDTH + CONTROL_GAP
-    const rowHeight = Math.max(SCORE_HEIGHT, CONTROL_SIZE)
-    const controlOffset = (rowHeight - CONTROL_SIZE) / 2
-    const scoreOffsetY = (rowHeight - SCORE_HEIGHT) / 2
-    const minusY = stackY + controlOffset
-    const scoreBoxY = stackY + scoreOffsetY
-    const plusY = stackY + controlOffset
-
-    const handleIncrement = () => {
-      if (playerReady && player) {
-        onScoreUpdate(matchId, player.id, true)
-      }
-    }
-
-    const handleDecrement = () => {
-      if (canDecrement && player) {
-        onScoreUpdate(matchId, player.id, false)
-      }
-    }
-
-    const buttonStyle = (enabled: boolean): React.CSSProperties => ({
-      cursor: enabled ? 'pointer' : 'not-allowed'
-    })
-    const scoreFill = playerReady ? '#e0f2fe' : '#1f2937'
-    const scoreStroke = playerReady ? '#0ea5e9' : '#334155'
-    const iconColor = (enabled: boolean) => (enabled ? '#0f172a' : '#94a3b8')
-    const upCenterX = plusX + CONTROL_SIZE / 2
-    const upCenterY = plusY + CONTROL_SIZE / 2
-    const downCenterX = minusX + CONTROL_SIZE / 2
-    const downCenterY = minusY + CONTROL_SIZE / 2
-    const arrowHalfWidth = CONTROL_SIZE * 0.25
-    const arrowHeight = CONTROL_SIZE * 0.35
-    const upArrow = `
-      M ${upCenterX - arrowHalfWidth} ${upCenterY + arrowHeight / 2}
-      L ${upCenterX} ${upCenterY - arrowHeight / 2}
-      L ${upCenterX + arrowHalfWidth} ${upCenterY + arrowHeight / 2}
-      Z
-    `
-    const downArrow = `
-      M ${downCenterX - arrowHalfWidth} ${downCenterY - arrowHeight / 2}
-      L ${downCenterX} ${downCenterY + arrowHeight / 2}
-      L ${downCenterX + arrowHalfWidth} ${downCenterY - arrowHeight / 2}
-      Z
-    `
-
-    return (
-      <g key={key}>
-        <rect
-          x={plusX}
-          y={plusY}
-          width={CONTROL_SIZE}
-          height={CONTROL_SIZE}
-          rx={4}
-          fill={playerReady ? '#22c55e' : '#475569'}
-          onClick={playerReady ? handleIncrement : undefined}
-          style={buttonStyle(playerReady)}
-        />
-        <path d={upArrow} fill={iconColor(playerReady)} />
-
-        <rect
-          x={scoreBoxX}
-          y={scoreBoxY}
-          width={scoreBoxWidth}
-          height={SCORE_HEIGHT}
-          rx={6}
-          fill={scoreFill}
-          stroke={scoreStroke}
-          strokeWidth={1}
-        />
-        <text
-          x={scoreBoxX + scoreBoxWidth / 2}
-          y={scoreBoxY + SCORE_HEIGHT / 2 + 5}
-          fill="#0f172a"
-          fontSize={16}
-          fontWeight={700}
-          textAnchor="middle"
-        >
-          {scoreValue}
-        </text>
-
-        <rect
-          x={minusX}
-          y={minusY}
-          width={CONTROL_SIZE}
-          height={CONTROL_SIZE}
-          rx={4}
-          fill={canDecrement ? '#f87171' : '#475569'}
-          onClick={canDecrement ? handleDecrement : undefined}
-          style={buttonStyle(canDecrement)}
-        />
-        <path d={downArrow} fill={iconColor(canDecrement)} />
-      </g>
-    )
-  }
-
   return (
     <svg
       width="100%"
@@ -347,77 +236,18 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
                 })
               }
 
-              const stackBaseX = x + CARD_WIDTH - SCORE_STACK_WIDTH - 12
-              const topStackY = y + 6
-              const bottomStackY = y + CARD_HEIGHT / 2 + 6
-
               return (
-                <g key={identifier}>
-                  {connectors}
-
-                  <rect
-                    x={x}
-                    y={y}
-                    width={CARD_WIDTH}
-                    height={CARD_HEIGHT}
-                    rx={16}
-                    fill="url(#cardBg)"
-                    stroke={isSelected ? '#5eead4' : match.isFinished ? '#22c55e' : '#94a3b8'}
-                    strokeWidth={isSelected ? 4 : match.isFinished ? 3 : 2}
-                    opacity={match.player1?.name === 'TBD' && match.player2?.name === 'TBD' ? 0.4 : 1}
-                    onClick={() => handleSelect(roundIdx, matchIdx)}
-                    style={{ cursor: 'pointer' }}
-                  />
-
-                  <text
-                    x={x + 16}
-                    y={y + 22}
-                    fill={
-                      match.winner?.id === match.player1?.id
-                        ? '#22c55e'
-                        : match.isFinished && match.player1?.name !== 'TBD'
-                          ? '#f87171'
-                          : '#0f172a'
-                    }
-                    fontSize={13}
-                    fontWeight={match.winner?.id === match.player1?.id ? 700 : 500}
-                  >
-                    {match.player1?.name ?? 'TBD'}
-                  </text>
-
-                  <text
-                    x={x + 16}
-                    y={y + CARD_HEIGHT / 2 + 16}
-                    fill={
-                      match.winner?.id === match.player2?.id
-                        ? '#22c55e'
-                        : match.isFinished && match.player2?.name !== 'TBD'
-                          ? '#f87171'
-                          : '#0f172a'
-                    }
-                    fontSize={13}
-                    fontWeight={match.winner?.id === match.player2?.id ? 700 : 500}
-                  >
-                    {match.player2?.name ?? 'TBD'}
-                  </text>
-
-                  {renderScoreStack(
-                    match.id,
-                    match.player1,
-                    match.player1Score ?? 0,
-                    stackBaseX,
-                    topStackY,
-                    `${identifier}-stack1`
-                  )}
-                  {renderScoreStack(
-                    match.id,
-                    match.player2,
-                    match.player2Score ?? 0,
-                    stackBaseX,
-                    bottomStackY,
-                    `${identifier}-stack2`
-                  )}
-                </g>
+                <SvgMatchCard
+                  key={identifier}
+                  match={match}
+                  x={x}
+                  y={y}
+                  connectors={connectors}
+                  isSelected={isSelected}
+                  dimmed={match.player1?.name === 'TBD' && match.player2?.name === 'TBD'}
+                  onSelect={() => handleSelect(roundIdx, matchIdx)}
+                  onScoreUpdate={onScoreUpdate}
+                />
               )
             })}
           </g>

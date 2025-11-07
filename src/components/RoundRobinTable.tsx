@@ -22,13 +22,14 @@ import {
   TabPanels,
   Tab,
   TabPanel,
-
   Center,
-  IconButton,
-
+  Icon,
 } from '@chakra-ui/react'
-import { ArrowBackIcon, ChevronUpIcon, ChevronDownIcon } from '@chakra-ui/icons'
+import { ArrowBackIcon } from '@chakra-ui/icons'
+import { FaListUl } from 'react-icons/fa'
 import type { Player, Match, TournamentSettings, RoundRobinResult } from '../types'
+import SvgRoundRobinBoard from './SvgRoundRobinBoard'
+import type { ScoreUpdateHandler } from './svg/types'
 
 interface RoundRobinTableProps {
   players: Player[]
@@ -36,6 +37,17 @@ interface RoundRobinTableProps {
   matches: Match[]
   onMatchesUpdate: (matches: Match[]) => void
   onBack: () => void
+}
+
+const NEON_COLORS = {
+  cardBg: 'rgba(15,23,42,0.9)',
+  panelBg: 'rgba(2,6,23,0.65)',
+  border: 'rgba(14,165,233,0.5)',
+  accent: '#0ea5e9',
+  accentSoft: 'rgba(14,165,233,0.2)',
+  success: '#22c55e',
+  danger: '#f87171',
+  muted: '#94a3b8',
 }
 
 const RoundRobinTable = ({ 
@@ -262,214 +274,44 @@ const RoundRobinTable = ({
       updateMatchScore(matchId, newPlayer1Score, newPlayer2Score)
     }
   }
-
-  const renderMatchCard = (match: Match) => {
-    const eliminatedPlayers = getEliminatedPlayers();
-    const isPlayer1Eliminated = eliminatedPlayers.includes(match.player1.id);
-    const isPlayer2Eliminated = eliminatedPlayers.includes(match.player2.id);
-    
-    return (
-      <Card key={match.id} mb={4} borderRadius="lg" shadow="md" bg="white">
-        <CardBody p={4}>
-          <VStack spacing={4}>
-            {/* Match Header */}
-            <HStack justify="space-between" w="100%" alignItems="center">
-              <Badge colorScheme="blue" fontSize="sm" px={3} py={1} borderRadius="full">
-                Aktuelles Match
-              </Badge>
-              {match.isFinished && (
-                <Badge colorScheme="green" fontSize="sm">✓ Beendet</Badge>
-              )}
-            </HStack>
-
-            {/* Players Section with Arrow Controls */}
-            <HStack spacing={8} w="100%" justify="center" alignItems="center">
-              {/* Player 1 */}
-              <VStack spacing={3} flex={1}>
-                <VStack spacing={1}>
-                  <Text 
-                    fontSize="xl" 
-                    fontWeight="bold" 
-                    color={match.winner?.id === match.player1.id ? "green.600" : "blue.800"}
-                    textAlign="center"
-                  >
-                    {match.player1.name}
-                  </Text>
-                  {isPlayer1Eliminated && (
-                    <Badge colorScheme="red" fontSize="xs">
-                      ❌ Ausgeschieden
-                    </Badge>
-                  )}
-                </VStack>
-                
-                {/* Score Display with Arrow Controls */}
-                <VStack spacing={2}>
-                  <IconButton
-                    aria-label="Erhöhe Score"
-                    icon={<ChevronUpIcon />}
-                    size="sm"
-                    colorScheme="green"
-                    isDisabled={match.isFinished || match.player1Score >= (settings.format === 'best-of-3' ? 2 : 3)}
-                    onClick={() => incrementScore(match.id, match.player1.id)}
-                  />
-                  
-                  <Box 
-                    bg={match.winner?.id === match.player1.id ? "green.100" : "blue.50"}
-                    p={3} 
-                    borderRadius="lg" 
-                    minW="60px" 
-                    textAlign="center"
-                    borderWidth={2}
-                    borderColor={match.winner?.id === match.player1.id ? "green.400" : "blue.200"}
-                  >
-                    <Text fontSize="2xl" fontWeight="bold" 
-                      color={match.winner?.id === match.player1.id ? "green.700" : "blue.700"}>
-                      {match.player1Score}
-                    </Text>
-                  </Box>
-                  
-                  <IconButton
-                    aria-label="Verringere Score"
-                    icon={<ChevronDownIcon />}
-                    size="sm"
-                    colorScheme="red"
-                    isDisabled={match.isFinished || match.player1Score <= 0}
-                    onClick={() => decrementScore(match.id, match.player1.id)}
-                  />
-                </VStack>
-              </VStack>
-
-              {/* VS Separator */}
-              <VStack spacing={2}>
-                <Text fontSize="2xl" fontWeight="bold" color="gray.500">
-                  VS
-                </Text>
-                <Badge colorScheme="purple" px={2} py={1}>
-                  {settings.format === 'best-of-3' ? 'BO3' : 'BO5'}
-                </Badge>
-              </VStack>
-
-              {/* Player 2 */}
-              <VStack spacing={3} flex={1}>
-                <VStack spacing={1}>
-                  <Text 
-                    fontSize="xl" 
-                    fontWeight="bold" 
-                    color={match.winner?.id === match.player2.id ? "green.600" : "blue.800"}
-                    textAlign="center"
-                  >
-                    {match.player2.name}
-                  </Text>
-                  {isPlayer2Eliminated && (
-                    <Badge colorScheme="red" fontSize="xs">
-                      ❌ Ausgeschieden
-                    </Badge>
-                  )}
-                </VStack>
-                
-                {/* Score Display with Arrow Controls */}
-                <VStack spacing={2}>
-                  <IconButton
-                    aria-label="Erhöhe Score"
-                    icon={<ChevronUpIcon />}
-                    size="sm"
-                    colorScheme="green"
-                    isDisabled={match.isFinished || match.player2Score >= (settings.format === 'best-of-3' ? 2 : 3)}
-                    onClick={() => incrementScore(match.id, match.player2.id)}
-                  />
-                  
-                  <Box 
-                    bg={match.winner?.id === match.player2.id ? "green.100" : "blue.50"}
-                    p={3} 
-                    borderRadius="lg" 
-                    minW="60px" 
-                    textAlign="center"
-                    borderWidth={2}
-                    borderColor={match.winner?.id === match.player2.id ? "green.400" : "blue.200"}
-                  >
-                    <Text fontSize="2xl" fontWeight="bold" 
-                      color={match.winner?.id === match.player2.id ? "green.700" : "blue.700"}>
-                      {match.player2Score}
-                    </Text>
-                  </Box>
-                  
-                  <IconButton
-                    aria-label="Verringere Score"
-                    icon={<ChevronDownIcon />}
-                    size="sm"
-                    colorScheme="red"
-                    isDisabled={match.isFinished || match.player2Score <= 0}
-                    onClick={() => decrementScore(match.id, match.player2.id)}
-                  />
-                </VStack>
-              </VStack>
-            </HStack>
-
-            {/* Winner Display */}
-            {match.isFinished && match.winner && (
-              <Box textAlign="center" p={4} bg="green.50" borderRadius="lg" w="100%" borderWidth={2} borderColor="green.300">
-                <HStack justify="center" spacing={2}>
-                  <Text fontSize="lg" color="green.700">🏆</Text>
-                  <Text color="green.700" fontWeight="bold" fontSize="lg">
-                    Sieger: {match.winner.name}
-                  </Text>
-                  <Text fontSize="lg" color="green.700">🏆</Text>
-                </HStack>
-              </Box>
-            )}
-          </VStack>
-        </CardBody>
-      </Card>
-    )
+  const handleSvgScoreUpdate: ScoreUpdateHandler = (matchId, playerId, increment) => {
+    if (increment) {
+      incrementScore(matchId, playerId)
+    } else {
+      decrementScore(matchId, playerId)
+    }
   }
 
-  const renderCompletedMatch = (match: Match, index: number) => (
-    <HStack key={match.id} justify="space-between" p={3} bg="gray.50" borderRadius="md" mb={2}>
-      <HStack spacing={4}>
-        <Text fontSize="sm" color="gray.600">#{index + 1}</Text>
-        <HStack spacing={3}>
-          <Text fontWeight="semibold" color={match.winner?.id === match.player1.id ? "green.600" : "gray.600"}>
-            {match.player1.name}
-          </Text>
-          <Badge size="sm" colorScheme={match.winner?.id === match.player1.id ? "green" : "gray"}>
-            {match.player1Score}
-          </Badge>
-        </HStack>
-        <Text color="gray.500">vs</Text>
-        <HStack spacing={3}>
-          <Badge size="sm" colorScheme={match.winner?.id === match.player2.id ? "green" : "gray"}>
-            {match.player2Score}
-          </Badge>
-          <Text fontWeight="semibold" color={match.winner?.id === match.player2.id ? "green.600" : "gray.600"}>
-            {match.player2.name}
-          </Text>
-        </HStack>
-      </HStack>
-      <Badge colorScheme="green" fontSize="xs">
-        🏆 {match.winner?.name}
-      </Badge>
-    </HStack>
-  )
+  const currentMatchesList = getCurrentMatches()
+  const completedMatchesList = getCompletedMatches()
 
   return (
-    <Card maxW="6xl" mx="auto" shadow="2xl">
-      <CardHeader bg="blue.500" color="white" borderTopRadius="xl">
-        <VStack spacing={4}>
-          <Heading size="lg" textAlign="center">
-            🏆 Gruppensystem - Jeder gegen Jeden
-          </Heading>
-          <HStack spacing={4} alignItems="center">
-            <Text>Fortschritt: {finishedMatches}/{totalMatches} Spiele</Text>
-            <Progress 
-              value={(finishedMatches / totalMatches) * 100} 
-              w="200px" 
-              colorScheme="orange"
-              bg="whiteAlpha.300"
-              borderRadius="full"
-            />
-          </HStack>
-        </VStack>
-      </CardHeader>
+    <Card maxW="7xl" mx="auto" shadow="2xl" bg="rgba(15,23,42,0.95)" color="white" borderWidth={1} borderColor="cyan.500" borderRadius="3xl">
+      <CardHeader bg="blackAlpha.600" borderTopRadius="3xl" borderBottomWidth={1} borderColor="cyan.500">
+  <HStack justify="space-between" align="center">
+    <HStack spacing={3}>
+      <Icon as={FaListUl} boxSize={6} color="cyan.300" />
+      <VStack align="flex-start" spacing={0}>
+        <Heading size="md">Round Robin Matrix</Heading>
+        <Text fontSize="sm" color="whiteAlpha.700">
+          Jeder-gegen-Jeden Übersicht
+        </Text>
+      </VStack>
+    </HStack>
+    <HStack spacing={4}>
+      <Badge colorScheme="cyan" borderRadius="full" px={4} py={1}>
+        Fortschritt {finishedMatches}/{totalMatches}
+      </Badge>
+      <Progress
+        value={totalMatches === 0 ? 0 : (finishedMatches / totalMatches) * 100}
+        w="200px"
+        colorScheme="cyan"
+        bg="whiteAlpha.200"
+        borderRadius="full"
+      />
+    </HStack>
+  </HStack>
+</CardHeader>
 
       <CardBody p={0}>
         <Tabs colorScheme="blue" variant="enclosed">
@@ -484,13 +326,28 @@ const RoundRobinTable = ({
               <VStack spacing={6} align="stretch">
                 {/* Aktuelle Matches */}
                 <Box>
-                  <Heading size="md" mb={4} color="blue.700">
+                  <Heading size="md" mb={4} color="cyan.200">
                     🎯 Aktuelle Matches
                   </Heading>
-                  {getCurrentMatches().length > 0 ? (
-                    <VStack spacing={4} align="stretch">
-                      {getCurrentMatches().map((match) => renderMatchCard(match))}
-                    </VStack>
+                  {currentMatchesList.length > 0 ? (
+                    <Box
+                      bg={NEON_COLORS.panelBg}
+                      borderWidth={1}
+                      borderColor={NEON_COLORS.border}
+                      borderRadius="2xl"
+                      p={4}
+                      boxShadow="lg"
+                      overflowX="auto"
+                    >
+                      <Box minH="380px">
+                        <SvgRoundRobinBoard
+                          matches={currentMatchesList}
+                          columns={Math.min(3, currentMatchesList.length)}
+                          allowEditing
+                          onScoreUpdate={handleSvgScoreUpdate}
+                        />
+                      </Box>
+                    </Box>
                   ) : (
                     <Card bg="green.50" borderColor="green.200" borderWidth={2}>
                       <CardBody p={6} textAlign="center">
@@ -509,18 +366,29 @@ const RoundRobinTable = ({
                 </Box>
 
                 {/* Abgeschlossene Matches */}
-                {getCompletedMatches().length > 0 && (
+                {completedMatchesList.length > 0 && (
                   <Box>
-                    <Heading size="md" mb={4} color="gray.600">
-                      ✅ Abgeschlossene Matches ({getCompletedMatches().length})
+                    <Heading size="md" mb={4} color="purple.200">
+                      ? Abgeschlossene Matches ({completedMatchesList.length})
                     </Heading>
-                    <Card bg="gray.50">
-                      <CardBody p={4}>
-                        <VStack spacing={2} align="stretch">
-                          {getCompletedMatches().map((match, index) => renderCompletedMatch(match, index))}
-                        </VStack>
-                      </CardBody>
-                    </Card>
+                    <Box
+                      bg={NEON_COLORS.panelBg}
+                      borderWidth={1}
+                      borderColor={NEON_COLORS.border}
+                      borderRadius="2xl"
+                      p={4}
+                      boxShadow="lg"
+                      overflowX="auto"
+                    >
+                      <Box minH="320px">
+                        <SvgRoundRobinBoard
+                          matches={completedMatchesList}
+                          columns={Math.min(4, Math.max(1, completedMatchesList.length))}
+                          allowEditing={false}
+                          onScoreUpdate={handleSvgScoreUpdate}
+                        />
+                      </Box>
+                    </Box>
                   </Box>
                 )}
 
@@ -629,3 +497,5 @@ const RoundRobinTable = ({
 }
 
 export default RoundRobinTable
+
+
