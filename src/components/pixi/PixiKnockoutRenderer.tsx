@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Application, Container, Graphics, Text as PixiText } from 'pixi.js'
+import type { DisplayObject } from 'pixi.js'
 import type { Match, TournamentSettings } from '../../types'
 
 interface PixiKnockoutRendererProps {
@@ -22,12 +23,25 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const appRef = useRef<Application | null>(null)
   const containerRef = useRef<Container | null>(null)
+  const [appReady, setAppReady] = useState(false)
 
   // Auswahl für Keyboard-Steuerung
   const selectedRef = useRef<{ roundIdx: number; matchIdx: number }>({
     roundIdx: 0,
     matchIdx: 0,
   })
+
+  const destroyContainerChildren = useCallback(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const children = container.removeChildren() as DisplayObject[]
+    children.forEach(child => {
+      child.destroy({
+        children: true
+      })
+    })
+  }, [])
 
   // Pixi App einmalig initialisieren
   useEffect(() => {
@@ -59,7 +73,7 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
 
         appRef.current = app
         containerRef.current = container
-
+        setAppReady(true)
         onReady()
       } catch (err) {
         console.error('PixiKnockoutRenderer init failed:', err)
@@ -70,13 +84,15 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
 
     return () => {
       destroyed = true
+      destroyContainerChildren()
       if (appRef.current) {
         appRef.current.destroy(true)
         appRef.current = null
         containerRef.current = null
       }
+      setAppReady(false)
     }
-  }, [onReady])
+  }, [destroyContainerChildren, onReady])
 
   // Helper: sichere Auswahl innerhalb bounds halten
   const ensureValidSelection = () => {
@@ -99,196 +115,158 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
   useEffect(() => {
     const app = appRef.current
     const container = containerRef.current
-    if (!app || !container) return
+    if (!appReady || !app || !container) {
+      return
+    }
 
     ensureValidSelection()
     const { roundIdx: selRound, matchIdx: selMatch } = selectedRef.current
 
-    container.removeChildren()
-
-    if (!rounds.length) {
-      app.render()
-      return
-    }
+    destroyContainerChildren()
 
     const g = new Graphics()
-
     const width = app.renderer.width
     const height = app.renderer.height
 
-    // Subtiles Grid im Hintergrund
-    g.lineStyle(1, 0x111827, 1)
-    for (let x = 0; x < width; x += 40) {
+    // Hintergrund-Grid
+    g.lineStyle(1, 0x0f172a, 0.35)
+    for (let x = 0; x < width; x += 32) {
       g.moveTo(x, 0)
       g.lineTo(x, height)
     }
-    for (let y = 0; y < height; y += 40) {
+    for (let y = 0; y < height; y += 32) {
       g.moveTo(0, y)
       g.lineTo(width, y)
     }
 
-    container.addChild(g)
+    const cardWidth = 220
+    const cardHeight = 58
+    const horizontalSpacing = 240
+    const verticalSpacing = 36
+    const startX = 90
+    const startY = 120
+    const connectorColor = 0x6fe36e
 
-    const cardWidth = 260
-    const cardHeight = 52
-    const roundSpacing = Math.max(260, (width - 200) / Math.max(rounds.length, 1))
-    const matchSpacing = 80
-    const startX = 80
-    const startY = 140
+    const roundPositions: number[][] = []
+    rounds.forEach((round, roundIndex) => {
+      if (roundIndex === 0) {
+        roundPositions.push(
+          round.map((_, idx) => startY + idx * (cardHeight + verticalSpacing))
+        )
+      } else {
+        const prevPositions = roundPositions[roundIndex - 1] ?? []
+        const positions = round.map((_, idx) => {
+          const lastPrev = prevPositions.length
+            ? prevPositions[prevPositions.length - 1]
+            : undefined
+          const parentA = prevPositions[idx * 2] ?? lastPrev ?? startY
+          const parentB = prevPositions[idx * 2 + 1] ?? parentA
+          return (parentA + parentB) / 2
+        })
+        roundPositions.push(positions)
+      }
+    })
 
     rounds.forEach((round, rIndex) => {
-      const baseX = startX + rIndex * roundSpacing
+      const roundX = startX + rIndex * horizontalSpacing
+      const yPositions = roundPositions[rIndex] ?? []
 
-      // Rundenüberschrift
       const roundLabel = new PixiText({
         text: getRoundName(rIndex),
         style: {
           fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
           fontSize: 16,
-          fill: 0xe5e7eb,
+          letterSpacing: 1,
+          fill: 0xe2e8f0,
           fontWeight: 'bold',
         },
       })
-      roundLabel.x = baseX + cardWidth / 2 - roundLabel.width / 2
-      roundLabel.y = startY - 50
+      roundLabel.x = roundX + cardWidth / 2 - roundLabel.width / 2
+      roundLabel.y = startY - 70
       container.addChild(roundLabel)
 
       round.forEach((match, mIndex) => {
-        const x = baseX
-        const y = startY + mIndex * matchSpacing
-
+        const matchY = yPositions[mIndex] ?? startY
+        const matchCenterY = matchY + cardHeight / 2
         const isSelected = rIndex === selRound && mIndex === selMatch
-        const isTbd1 = !match.player1 || match.player1.name === 'TBD'
-        const isTbd2 = !match.player2 || match.player2.name === 'TBD'
-        const winnerId = match.winner?.id
 
-        // Match-Hintergrund
-        g.lineStyle(
-          isSelected ? 3 : 2,
-          match.isFinished ? 0x22c55e : isSelected ? 0xf97316 : 0x38bdf8,
-          1
-        )
-        g.beginFill(0x020817)
-        g.drawRoundedRect(x, y, cardWidth, cardHeight, 10)
-        g.endFill()
+        if (rIndex > 0) {
+          const prevRoundX = startX + (rIndex - 1) * horizontalSpacing + cardWidth
+          const parentPositions = roundPositions[rIndex - 1] ?? []
+          const parentIndices = [mIndex * 2, mIndex * 2 + 1]
+          const controlX = prevRoundX + horizontalSpacing / 2
 
-        // Player 1 Area
+          parentIndices.forEach((idx) => {
+            const parentY = parentPositions[idx]
+            if (parentY === undefined) return
+            const parentCenterY = parentY + cardHeight / 2
+            g.lineStyle(2.2, connectorColor, 0.85)
+            g.moveTo(prevRoundX, parentCenterY)
+            g.quadraticCurveTo(controlX, parentCenterY, roundX, matchCenterY)
+          })
+        }
+
         g.lineStyle(0)
-        g.beginFill(
-          winnerId && winnerId === match.player1?.id ? 0x064e3b : 0x111827
-        )
-        g.drawRoundedRect(
-          x + 6,
-          y + 6,
-          cardWidth / 2 - 24,
-          cardHeight - 12,
-          6
-        )
+        g.beginFill(0x0284c7)
+        g.drawRoundedRect(roundX, matchY, cardWidth, cardHeight, 16)
         g.endFill()
 
-        // Player 2 Area
-        g.beginFill(
-          winnerId && winnerId === match.player2?.id ? 0x064e3b : 0x111827
-        )
-        g.drawRoundedRect(
-          x + cardWidth / 2 + 18,
-          y + 6,
-          cardWidth / 2 - 24,
-          cardHeight - 12,
-          6
-        )
-        g.endFill()
-
-        // Player 1 Text
-        const p1 = new PixiText({
-          text: isTbd1 ? 'TBD' : match.player1?.name ?? '—',
-          style: {
-            fontSize: 11,
-            fill: isTbd1 ? 0x6b7280 : 0xe5e7eb,
-            fontWeight:
-              winnerId && winnerId === match.player1?.id ? 'bold' : 'normal',
-          },
-        })
-        p1.x = x + 10
-        p1.y = y + 10
-        container.addChild(p1)
-
-        // Player 2 Text
-        const p2 = new PixiText({
-          text: isTbd2 ? 'TBD' : match.player2?.name ?? '—',
-          style: {
-            fontSize: 11,
-            fill: isTbd2 ? 0x6b7280 : 0xe5e7eb,
-            fontWeight:
-              winnerId && winnerId === match.player2?.id ? 'bold' : 'normal',
-          },
-        })
-        p2.x = x + cardWidth / 2 + 22
-        p2.y = y + 10
-        container.addChild(p2)
-
-        // Scores
-        if (!isTbd1) {
-          const s1 = new PixiText({
-            text: String(match.player1Score ?? 0),
-            style: {
-              fontSize: 14,
-              fill:
-                winnerId && winnerId === match.player1?.id
-                  ? 0x22c55e
-                  : 0x38bdf8,
-              fontWeight: 'bold',
-            },
-          })
-          s1.x = x + cardWidth / 2 - 34
-          s1.y = y + cardHeight / 2 - 11
-          container.addChild(s1)
+        if (isSelected) {
+          g.lineStyle(4, 0x5eead4, 0.9)
+          g.drawRoundedRect(roundX, matchY, cardWidth, cardHeight, 16)
+        } else if (match.isFinished) {
+          g.lineStyle(2, 0x22c55e, 0.85)
+          g.drawRoundedRect(roundX, matchY, cardWidth, cardHeight, 16)
         }
 
-        if (!isTbd2) {
-          const s2 = new PixiText({
-            text: String(match.player2Score ?? 0),
-            style: {
-              fontSize: 14,
-              fill:
-                winnerId && winnerId === match.player2?.id
-                  ? 0x22c55e
-                  : 0x38bdf8,
-              fontWeight: 'bold',
-            },
-          })
-          s2.x = x + cardWidth - 30
-          s2.y = y + cardHeight / 2 - 11
-          container.addChild(s2)
+        const playerTextStyle: ConstructorParameters<typeof PixiText>[0]['style'] = {
+          fontSize: 14,
+          fill: 0xf8fafc,
+          fontWeight: match.winner ? 'bold' : 'normal',
         }
 
-        // VS
-        const vs = new PixiText({
-          text: 'VS',
-          style: {
-            fontSize: 10,
-            fill: 0x6b7280,
-            fontWeight: 'bold',
-          },
+        const player1 = new PixiText({
+          text: match.player1?.name ?? 'TBD',
+          style: playerTextStyle,
         })
-        vs.x = x + cardWidth / 2 - vs.width / 2
-        vs.y = y + cardHeight / 2 - 7
-        container.addChild(vs)
+        player1.x = roundX + 18
+        player1.y = matchY + 12
+        container.addChild(player1)
 
-        // Verbindung zur nächsten Runde
-        if (rIndex < rounds.length - 1) {
-          const midY = y + cardHeight / 2
-          g.lineStyle(1.5, 0x38bdf8, 0.8)
-          g.moveTo(x + cardWidth, midY)
-          g.lineTo(x + roundSpacing - 40, midY)
+        const player2 = new PixiText({
+          text: match.player2?.name ?? 'TBD',
+          style: playerTextStyle,
+        })
+        player2.x = roundX + 18
+        player2.y = matchY + cardHeight / 2 + 4
+        container.addChild(player2)
+
+        const scoreStyle: ConstructorParameters<typeof PixiText>[0]['style'] = {
+          fontSize: 16,
+          fill: 0xfef3c7,
+          fontWeight: 'bold',
         }
+
+        const score1 = new PixiText({
+          text: String(match.player1Score ?? 0),
+          style: scoreStyle,
+        })
+        score1.x = roundX + cardWidth - 32
+        score1.y = matchY + 8
+        container.addChild(score1)
+
+        const score2 = new PixiText({
+          text: String(match.player2Score ?? 0),
+          style: scoreStyle,
+        })
+        score2.x = roundX + cardWidth - 32
+        score2.y = matchY + cardHeight / 2 + 8
+        container.addChild(score2)
       })
     })
 
     container.addChild(g)
-    app.render()
-  }, [rounds, currentRound, getRoundName])
-
+  }, [appReady, destroyContainerChildren, getRoundName, rounds, currentRound])
   // Keyboard Controls
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -359,15 +337,14 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
       selectedRef.current = { roundIdx, matchIdx }
 
       // Nach Navigation/Score neu rendern
-      const container = containerRef.current
-      if (app && container) {
-        container.removeChildren()
+      if (appRef.current) {
+        destroyContainerChildren()
       }
     }
 
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [rounds, onScoreUpdate])
+  }, [destroyContainerChildren, onScoreUpdate, rounds])
 
   return (
     <canvas
@@ -381,3 +358,4 @@ export const PixiKnockoutRenderer: React.FC<PixiKnockoutRendererProps> = ({
     />
   )
 }
+

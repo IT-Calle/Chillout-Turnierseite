@@ -19,73 +19,74 @@ export const useTournamentLogic = ({
 
   // Generiere komplette KO-Matrix
   useEffect(() => {
-    console.log('useTournamentLogic: Checking conditions for round generation', {
-      playersLength: players.length,
-      matchesLength: matches.length,
-      players,
-      matches
+    if (players.length === 0) {
+      setRounds([])
+      return
+    }
+
+    const createPlaceholderPlayer = (round: number, matchIndex: number, slot: 1 | 2): Player => ({
+      id: `tbd-${round}-${matchIndex}-${slot}`,
+      name: 'TBD',
+      seed: 0
     })
 
-    console.log('useTournamentLogic: Initial state', {
-      playersLength: players.length,
-      matchesLength: matches.length,
-      players,
-      matches
-    });
+    const createPlaceholderMatch = (roundNumber: number, matchIndex: number): Match => ({
+      id: `placeholder-${roundNumber}-${matchIndex}`,
+      player1: createPlaceholderPlayer(roundNumber, matchIndex, 1),
+      player2: createPlaceholderPlayer(roundNumber, matchIndex, 2),
+      player1Score: 0,
+      player2Score: 0,
+      isFinished: false,
+      round: roundNumber
+    })
 
-    if (players.length > 0) {
-      console.log('useTournamentLogic: Generating tournament matrix regardless of matches state...')
+    const generateSeededMatches = (): Match[] => {
       const sortedPlayers = [...players].sort((a, b) => (a.seed || 0) - (b.seed || 0))
-      const totalRounds = Math.ceil(Math.log2(players.length))
-      const allRounds: Match[][] = []
+      const seededMatches: Match[] = []
+      for (let i = 0; i < sortedPlayers.length; i += 2) {
+        const player1 = sortedPlayers[i]
+        const player2 = sortedPlayers[i + 1]
+        if (!player1) break
 
-      let playersInRound = players.length
-
-      for (let round = 1; round <= totalRounds; round++) {
-        const roundMatches: Match[] = []
-        const matchesInThisRound = Math.floor(playersInRound / 2)
-
-        for (let matchIndex = 0; matchIndex < matchesInThisRound; matchIndex++) {
-          const match: Match = {
-            id: crypto.randomUUID(),
-            player1: round === 1 && matchIndex * 2 < sortedPlayers.length
-              ? sortedPlayers[matchIndex * 2]
-              : { id: `tbd-${round}-${matchIndex}-1`, name: 'TBD', seed: 0 },
-            player2: round === 1 && matchIndex * 2 + 1 < sortedPlayers.length
-              ? sortedPlayers[matchIndex * 2 + 1]
-              : { id: `tbd-${round}-${matchIndex}-2`, name: 'TBD', seed: 0 },
-            player1Score: 0,
-            player2Score: 0,
-            isFinished: false,
-            round: round
-          }
-          roundMatches.push(match)
-        }
-
-        if (matchesInThisRound > 0) {
-          allRounds.push(roundMatches)
-        }
-
-        playersInRound = matchesInThisRound
-        if (playersInRound <= 1) break
+        seededMatches.push({
+          id: crypto.randomUUID(),
+          player1,
+          player2: player2 ?? createPlaceholderPlayer(1, i / 2, 2),
+          player1Score: 0,
+          player2Score: 0,
+          isFinished: false,
+          round: 1
+        })
       }
-
-      setRounds(allRounds)
-
-      const firstRoundMatches = allRounds[0]?.filter(match =>
-        match.player1.name !== 'TBD' && match.player2.name !== 'TBD'
-      ) || []
-
-      console.log('useTournamentLogic: Generated tournament', {
-        totalRounds: allRounds.length,
-        firstRoundMatches: firstRoundMatches.length
-      })
-
-      onMatchesUpdate(firstRoundMatches)
-    } else {
-      console.log('useTournamentLogic: Conditions not met for tournament generation')
+      return seededMatches
     }
-  }, [players, matches, matches.length, onMatchesUpdate])
+
+    const hasExistingMatches = matches.length > 0
+    const firstRoundMatches = (hasExistingMatches ? matches : generateSeededMatches()).map(match => ({
+      ...match,
+      round: match.round ?? 1
+    }))
+
+    const allRounds: Match[][] = [firstRoundMatches]
+    let matchesInRound = firstRoundMatches.length
+    let nextRoundNumber = 2
+
+    while (matchesInRound > 1) {
+      matchesInRound = Math.floor(matchesInRound / 2)
+      if (matchesInRound === 0) break
+      const placeholderMatches = Array.from({ length: matchesInRound }, (_, index) =>
+        createPlaceholderMatch(nextRoundNumber, index)
+      )
+      allRounds.push(placeholderMatches)
+      nextRoundNumber += 1
+    }
+
+    setRounds(allRounds)
+
+    if (!hasExistingMatches && firstRoundMatches.length > 0) {
+      onMatchesUpdate(firstRoundMatches)
+    }
+  }, [players, matches, onMatchesUpdate])
 
   // Bestimme aktuelle Runde
   useEffect(() => {

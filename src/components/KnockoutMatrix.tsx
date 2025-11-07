@@ -1,18 +1,9 @@
-import React, { useState, useCallback } from 'react'
-import {
-  Box,
-  Heading,
-  Button,
-  HStack,
-  VStack,
-  Text,
-  Badge,
-  Icon,
-} from '@chakra-ui/react'
+import React, { useCallback } from 'react'
+import { Box, Heading, Button, HStack, VStack, Text, Badge, Icon } from '@chakra-ui/react'
 import { FaTrophy, FaFire } from 'react-icons/fa'
 import type { Player, Match, TournamentSettings } from '../types'
 import { useTournamentLogic } from '../hooks/useTournamentLogic'
-import { PixiKnockoutRenderer } from './pixi/PixiKnockoutRenderer'
+import SvgKnockoutRenderer from './SvgKnockoutRenderer'
 
 interface KnockoutMatrixProps {
   players: Player[]
@@ -27,21 +18,13 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
   settings,
   matches,
   onMatchesUpdate,
-  onBack,
+  onBack
 }) => {
-  const [pixiReady, setPixiReady] = useState(false)
-
-  const {
-    rounds,
-    currentRound,
-    champion,
-    updateMatchScore,
-    getRoundName,
-  } = useTournamentLogic({
+  const { rounds, currentRound, champion, updateMatchScore, getRoundName } = useTournamentLogic({
     players,
     settings,
     matches,
-    onMatchesUpdate,
+    onMatchesUpdate
   })
 
   const handleScoreUpdate = useCallback(
@@ -51,13 +34,8 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
     [updateMatchScore]
   )
 
-  const handlePixiReady = useCallback(() => {
-    setPixiReady(true)
-  }, [])
-
   return (
     <Box w="full" h="100vh" bg="gray.900" position="relative" overflow="hidden">
-      {/* Header */}
       <HStack
         position="absolute"
         top={4}
@@ -79,7 +57,7 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
 
         {champion ? (
           <Badge colorScheme="green" fontSize="lg" px={4} py={2}>
-            👑 Champion: {champion.name}
+            🏆 Champion: {champion.name}
           </Badge>
         ) : (
           <Badge colorScheme="orange" fontSize="md" px={3} py={1}>
@@ -89,7 +67,7 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
 
         <HStack spacing={3}>
           <Text fontSize="sm" color="gray.300">
-            Pfeiltasten: Score · WASD: Match wechseln
+            Pfeiltasten: Score • WASD: Match wählen
           </Text>
           <Button onClick={onBack} colorScheme="orange" size="sm">
             Zurück
@@ -97,18 +75,15 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
         </HStack>
       </HStack>
 
-      {/* Pixi Bracket */}
       <Box w="full" h="full">
-        <PixiKnockoutRenderer
+        <SvgKnockoutRenderer
           rounds={rounds}
           currentRound={currentRound}
           settings={settings}
           onScoreUpdate={handleScoreUpdate}
-          onReady={handlePixiReady}
           getRoundName={getRoundName}
         />
 
-        {/* Loading Overlay */}
         {rounds.length === 0 && (
           <VStack
             position="absolute"
@@ -129,7 +104,6 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
           </VStack>
         )}
 
-        {/* Kleines Debug-Label (optional, kannst du rauswerfen) */}
         <Text
           position="absolute"
           top="96px"
@@ -138,23 +112,9 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
           fontSize="xs"
           zIndex={25}
         >
-          rounds={rounds.length} · players={players.length}
+          rounds={rounds.length} • players={players.length}
         </Text>
       </Box>
-
-      {/* Pixi Status */}
-      <Badge
-        position="absolute"
-        bottom={4}
-        right={4}
-        colorScheme={pixiReady ? 'green' : 'yellow'}
-        fontSize="sm"
-        px={3}
-        py={2}
-        zIndex={40}
-      >
-        PIXI: {pixiReady ? '✓ Aktiv' : '⏳ Lädt...'}
-      </Badge>
     </Box>
   )
 }

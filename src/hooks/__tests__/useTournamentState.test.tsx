@@ -3,17 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useTournamentState, DEFAULT_TOURNAMENT_SETTINGS } from '../useTournamentState'
 import type { Match, Player, TournamentSettings } from '../../types'
 
-const mockedSaveTournamentToCache = vi.fn()
-const mockedLoadTournamentFromCache = vi.fn()
-const mockedClearTournamentCache = vi.fn()
-const mockedHasCachedTournament = vi.fn()
+const cacheMocks = vi.hoisted(() => ({
+  saveTournamentToCache: vi.fn(),
+  loadTournamentFromCache: vi.fn(),
+  clearTournamentCache: vi.fn(),
+  hasCachedTournament: vi.fn()
+}))
 
-vi.mock('../../utils/cache', () => ({
+vi.mock('../../utils/cache', () => cacheMocks)
+
+const {
   saveTournamentToCache: mockedSaveTournamentToCache,
   loadTournamentFromCache: mockedLoadTournamentFromCache,
   clearTournamentCache: mockedClearTournamentCache,
   hasCachedTournament: mockedHasCachedTournament
-}))
+} = cacheMocks
 
 describe('useTournamentState', () => {
   const playersFixture: Player[] = [

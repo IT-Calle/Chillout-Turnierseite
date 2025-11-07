@@ -362,7 +362,7 @@ const RoundRobinTable = ({
                   </Text>
                   {isPlayer2Eliminated && (
                     <Badge colorScheme="red" fontSize="xs">
-                      ❌ Eliminiert
+                      ❌ Ausgeschieden
                     </Badge>
                   )}
                 </VStack>
@@ -587,7 +587,7 @@ const RoundRobinTable = ({
                       <Td>
                         {result.isEliminated ? (
                           <Badge colorScheme="red" fontSize="sm" px={2} py={1} borderRadius="md">
-                            ❌ Eliminiert
+                            ❌ Ausgeschieden
                           </Badge>
                         ) : (
                           <Badge colorScheme="green" fontSize="sm" px={2} py={1} borderRadius="md">
