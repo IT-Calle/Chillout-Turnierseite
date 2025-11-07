@@ -1,0 +1,211 @@
+/* Global Styles für Dart Tournament Manager */
+
+:root {
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  --primary-color: #4CAF50;
+  --secondary-color: #2196F3;
+  --accent-color: #FF9800;
+  --error-color: #f44336;
+  --success-color: #4CAF50;
+  --warning-color: #FF9800;
+  --info-color: #2196F3;
+  
+  --text-primary: #1a365d;
+  --text-secondary: #2c5282;
+  --text-light: #3182ce;
+  
+  --background-primary: #ffffff;
+  --background-secondary: #f8f9fa;
+  --background-accent: #e3f2fd;
+  
+  --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+  
+  --border-radius: 8px;
+  --border-radius-large: 12px;
+  
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: var(--text-primary);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+h4 {
+  font-size: 1.25rem;
+}
+
+p {
+  margin: 0 0 1rem 0;
+  color: var(--text-secondary);
+}
+
+button {
+  border-radius: var(--border-radius);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: var(--primary-color);
+  color: rgb(0, 0, 0);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-light);
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-medium);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+input[type="text"],
+input[type="number"] {
+  border-radius: var(--border-radius);
+  border: 2px solid #e0e0e0;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+  background: white;
+  color: var(--text-primary); /* Dunkles Blau für Input-Text */
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+  outline: none;
+  border-color: #3b82f6; /* Blaue Border bei Fokus */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); /* Blaue Shadow bei Fokus */
+  color: #1a365d; /* Noch dunkleres Blau bei Fokus */
+}
+
+input[type="text"]::placeholder,
+input[type="number"]::placeholder {
+  color: #60a5fa; /* Helleres Blau für Placeholder */
+}
+
+input[type="radio"] {
+  accent-color: var(--secondary-color);
+  transform: scale(1.2);
+}
+
+ul, ol {
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.25rem;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Chakra UI Text Color Override für dunkles Blau */
+.chakra-text,
+.chakra-heading,
+[data-theme] .chakra-text,
+[data-theme] .chakra-heading {
+  color: var(--text-primary) !important;
+}
+
+.chakra-text[color*="gray"],
+.chakra-heading[color*="gray"] {
+  color: var(--text-primary) !important;
+}
+
+/* Spezifische Overrides für verschiedene Textfarben */
+[style*="color: rgb(45, 55, 72)"],
+[style*="color: rgb(74, 85, 104)"],
+[style*="color: rgb(113, 128, 150)"] {
+  color: var(--text-primary) !important;
+}
+
+/* Input-spezifische Overrides für Chakra UI */
+.chakra-input,
+.chakra-input__field,
+input[data-chakra-component="Input"] {
+  color: var(--text-primary) !important;
+}
+
+.chakra-input__field::placeholder,
+input[data-chakra-component="Input"]::placeholder {
+  color: #60a5fa !important; /* Helleres Blau für Placeholder */
+}
+
+.chakra-input__field:focus,
+input[data-chakra-component="Input"]:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 1px #3b82f6 !important;
+  color: #1a365d !important;
+}
+
+/* Nummer-Input spezifische Styles */
+.chakra-numberinput input {
+  color: var(--text-primary) !important;
+}
