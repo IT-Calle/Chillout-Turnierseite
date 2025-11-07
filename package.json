@@ -1,5 +1,5 @@
 {
-  "name": "privat_projekte",
+  "name": "Chillout-Turnierseite",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -41,3 +41,4 @@
     "vitest": "^2.1.8"
   }
 }
+
