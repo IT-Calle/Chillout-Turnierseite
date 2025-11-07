@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react'
 import { Box, Heading, Button, HStack, VStack, Text, Badge, Icon } from '@chakra-ui/react'
+import { LinkIcon } from '@chakra-ui/icons'
 import { FaTrophy, FaFire } from 'react-icons/fa'
 import type { Player, Match, TournamentSettings } from '../types'
 import { useTournamentLogic } from '../hooks/useTournamentLogic'
@@ -11,6 +12,8 @@ interface KnockoutMatrixProps {
   matches: Match[]
   onMatchesUpdate: (matches: Match[]) => void
   onBack: () => void
+  isReadOnly?: boolean
+  onShareScoreboard?: () => void
 }
 
 const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
@@ -18,7 +21,9 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
   settings,
   matches,
   onMatchesUpdate,
-  onBack
+  onBack,
+  isReadOnly = false,
+  onShareScoreboard
 }) => {
   const { rounds, currentRound, champion, updateMatchScore, getRoundName } = useTournamentLogic({
     players,
@@ -29,9 +34,12 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
 
   const handleScoreUpdate = useCallback(
     (matchId: string, playerId: string, increment: boolean) => {
+      if (isReadOnly) {
+        return
+      }
       updateMatchScore(matchId, playerId, increment)
     },
-    [updateMatchScore]
+    [isReadOnly, updateMatchScore]
   )
 
   return (
@@ -67,11 +75,24 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
 
         <HStack spacing={3}>
           <Text fontSize="sm" color="gray.300">
-            Pfeiltasten: Score • WASD: Match wählen
+            {isReadOnly ? 'Geteilte Ansicht · Änderungen deaktiviert' : 'Pfeiltasten: Score · WASD: Match wählen'}
           </Text>
-          <Button onClick={onBack} colorScheme="orange" size="sm">
-            Zurück
-          </Button>
+          {onShareScoreboard && (
+            <Button
+              leftIcon={<LinkIcon />}
+              variant="outline"
+              size="sm"
+              colorScheme="cyan"
+              onClick={onShareScoreboard}
+            >
+              Scoreboard teilen
+            </Button>
+          )}
+          {!isReadOnly && (
+            <Button onClick={onBack} colorScheme="orange" size="sm">
+              Zurück
+            </Button>
+          )}
         </HStack>
       </HStack>
 
@@ -81,6 +102,7 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
           currentRound={currentRound}
           onScoreUpdate={handleScoreUpdate}
           getRoundName={getRoundName}
+          interactive={!isReadOnly}
         />
 
         {rounds.length === 0 && (

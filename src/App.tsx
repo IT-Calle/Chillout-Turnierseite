@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react'
 import {
   Box,
   Container,
@@ -13,6 +14,7 @@ import {
   AlertDescription,
   CloseButton,
   useDisclosure,
+  useToast,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -27,6 +29,7 @@ import SeedingSelection from './components/SeedingSelection'
 import RoundRobinTable from './components/RoundRobinTable'
 import KnockoutMatrix from './components/KnockoutMatrix'
 import { useTournamentState } from './hooks/useTournamentState'
+import { buildShareUrl, createSnapshotPayload, decodeSnapshotFromParam } from './utils/shareLink'
 
 function App() {
   const { isOpen: isRestartModalOpen, onOpen: onRestartModalOpen, onClose: onRestartModalClose } = useDisclosure()
@@ -46,14 +49,107 @@ function App() {
     handleBackToSettings,
     loadCachedTournament,
     startNewTournament,
-    dismissCacheAlert
+    dismissCacheAlert,
+    loadSnapshot
   } = useTournamentState()
   const tournamentName = 'Dart Turnier'
+  const toast = useToast()
+  const [isSharedView, setIsSharedView] = useState(false)
+  const [sharedViewError, setSharedViewError] = useState<string | null>(null)
+  const [sharedMeta, setSharedMeta] = useState<{ timestamp: number } | null>(null)
+  const noopMatchesUpdate = useCallback(() => {}, [])
+
+  const copyToClipboard = useCallback(async (text: string) => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    }
+    if (typeof document !== 'undefined') {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const success = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return success
+    }
+    return false
+  }, [])
+
+  const handleShareScoreboard = useCallback(async () => {
+    if (currentPhase !== 'tournament') {
+      toast({
+        title: 'Scoreboard noch nicht verfügbar',
+        description: 'Starte zuerst das Turnier, um einen Link zu teilen.',
+        status: 'info',
+        duration: 4000
+      })
+      return
+    }
+
+    try {
+      const snapshot = createSnapshotPayload({
+        phase: 'tournament',
+        players,
+        settings: tournamentSettings,
+        matches
+      })
+      const shareUrl = buildShareUrl(snapshot)
+      const copied = await copyToClipboard(shareUrl)
+      if (!copied && typeof window !== 'undefined') {
+        window.prompt('Scoreboard-Link kopieren:', shareUrl)
+      }
+      toast({
+        title: 'Link bereit',
+        description: copied ? 'Der Link wurde in die Zwischenablage kopiert.' : 'Link im Dialog anzeigen',
+        status: 'success',
+        duration: 4000
+      })
+    } catch (error) {
+      console.error(error)
+      toast({
+        title: 'Link konnte nicht erstellt werden',
+        description: error instanceof Error ? error.message : undefined,
+        status: 'error'
+      })
+    }
+  }, [copyToClipboard, currentPhase, matches, players, toast, tournamentSettings])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const params = new URLSearchParams(window.location.search)
+    const encodedSnapshot = params.get('share')
+    if (!encodedSnapshot) {
+      return
+    }
+    const snapshot = decodeSnapshotFromParam(encodedSnapshot)
+    if (!snapshot) {
+      setSharedViewError('Dieser Link ist ungültig oder beschädigt.')
+      setIsSharedView(true)
+      return
+    }
+    loadSnapshot(snapshot)
+    setSharedMeta({ timestamp: snapshot.timestamp })
+    setSharedViewError(null)
+    setIsSharedView(true)
+  }, [loadSnapshot])
 
   const handleRestartConfirmation = () => {
     startNewTournament()
     onRestartModalClose()
   }
+
+  const handleExitSharedView = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const base = new URL(import.meta.env.BASE_URL || '/', window.location.origin)
+    window.location.href = base.toString()
+  }, [])
 
   const renderCurrentPhase = () => {
     switch (currentPhase) {
@@ -94,6 +190,7 @@ function App() {
               matches={matches}
               onMatchesUpdate={setMatches}
               onBack={handleBackToSettings}
+              onShareScoreboard={handleShareScoreboard}
             />
           )
         } else {
@@ -104,6 +201,7 @@ function App() {
               matches={matches}
               onMatchesUpdate={setMatches}
               onBack={handleBackToSettings}
+              onShareScoreboard={handleShareScoreboard}
             />
           )
         }
@@ -117,6 +215,71 @@ function App() {
     'linear(to-br, blue.600, purple.600)', 
     'linear(to-br, blue.800, purple.800)'
   )
+
+  if (isSharedView) {
+    const sharedDescription =
+      sharedViewError ??
+      (sharedMeta ? `Aktualisiert am ${new Date(sharedMeta.timestamp).toLocaleString()}` : undefined)
+    const sharedScoreboard = tournamentSettings.hasPointsRound ? (
+      <RoundRobinTable
+        players={players}
+        settings={tournamentSettings}
+        matches={matches}
+        onMatchesUpdate={noopMatchesUpdate}
+        onBack={() => {}}
+        isReadOnly
+        onShareScoreboard={handleShareScoreboard}
+      />
+    ) : (
+      <KnockoutMatrix
+        players={players}
+        settings={tournamentSettings}
+        matches={matches}
+        onMatchesUpdate={noopMatchesUpdate}
+        onBack={() => {}}
+        isReadOnly
+        onShareScoreboard={handleShareScoreboard}
+      />
+    )
+
+    return (
+      <Box minH="100vh" bgGradient={bgGradient}>
+        <Container maxW="6xl" py={10}>
+          <VStack spacing={6} align="stretch">
+            <Alert
+              status={sharedViewError ? 'error' : 'info'}
+              borderRadius="lg"
+              alignItems="flex-start"
+            >
+              <AlertIcon />
+              <Box flex="1" mr={4}>
+                <AlertTitle fontSize="lg">
+                  {sharedViewError ? 'Link ungültig' : 'Geteiltes Scoreboard'}
+                </AlertTitle>
+                <AlertDescription>
+                  {sharedDescription ?? 'Diesen Link kannst du weitergeben, um den Turnierstand zu zeigen.'}
+                </AlertDescription>
+              </Box>
+              {!sharedViewError && (
+                <Button
+                  size="sm"
+                  colorScheme="cyan"
+                  variant="outline"
+                  onClick={handleShareScoreboard}
+                >
+                  Link kopieren
+                </Button>
+              )}
+              <Button ml={3} size="sm" colorScheme="orange" onClick={handleExitSharedView}>
+                Eigenes Turnier starten
+              </Button>
+            </Alert>
+            {!sharedViewError && sharedScoreboard}
+          </VStack>
+        </Container>
+      </Box>
+    )
+  }
 
   return (
     <Box minH="100vh" bgGradient={bgGradient}>

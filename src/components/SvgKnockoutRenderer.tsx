@@ -16,6 +16,7 @@ interface SvgKnockoutRendererProps {
   currentRound: number
   onScoreUpdate: ScoreUpdateHandler
   getRoundName: (roundIndex: number) => string
+  interactive?: boolean
 }
 
 interface Selection {
@@ -27,7 +28,8 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
   rounds,
   currentRound,
   onScoreUpdate,
-  getRoundName
+  getRoundName,
+  interactive = true
 }) => {
   const [selection, setSelection] = useState<Selection>({ roundIdx: 0, matchIdx: 0 })
 
@@ -51,6 +53,9 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
   }, [ensureSelection, rounds])
 
   useEffect(() => {
+    if (!interactive) {
+      return
+    }
     const handleKey = (event: KeyboardEvent) => {
       if (!rounds.length) {
         return
@@ -115,7 +120,7 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
 
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [ensureSelection, onScoreUpdate, rounds])
+  }, [ensureSelection, interactive, onScoreUpdate, rounds])
 
   const layout = useMemo(() => {
     if (!rounds.length) {
@@ -247,6 +252,7 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
                   dimmed={match.player1?.name === 'TBD' && match.player2?.name === 'TBD'}
                   onSelect={() => handleSelect(roundIdx, matchIdx)}
                   onScoreUpdate={onScoreUpdate}
+                  interactive={interactive}
                 />
               )
             })}

@@ -25,11 +25,11 @@ import {
   Center,
   Icon,
 } from '@chakra-ui/react'
-import { ArrowBackIcon } from '@chakra-ui/icons'
+import { ArrowBackIcon, LinkIcon } from '@chakra-ui/icons'
 import { FaListUl } from 'react-icons/fa'
 import type { Player, Match, TournamentSettings, RoundRobinResult } from '../types'
-import SvgRoundRobinBoard from './SvgRoundRobinBoard'
 import type { ScoreUpdateHandler } from './svg/types'
+import SvgRoundRobinBoard from './SvgRoundRobinBoard'
 
 interface RoundRobinTableProps {
   players: Player[]
@@ -37,6 +37,8 @@ interface RoundRobinTableProps {
   matches: Match[]
   onMatchesUpdate: (matches: Match[]) => void
   onBack: () => void
+  isReadOnly?: boolean
+  onShareScoreboard?: () => void
 }
 
 const NEON_COLORS = {
@@ -50,12 +52,14 @@ const NEON_COLORS = {
   muted: '#94a3b8',
 }
 
-const RoundRobinTable = ({ 
-  players, 
-  settings, 
-  matches, 
-  onMatchesUpdate, 
-  onBack 
+const RoundRobinTable = ({
+  players,
+  settings,
+  matches,
+  onMatchesUpdate,
+  onBack,
+  isReadOnly = false,
+  onShareScoreboard
 }: RoundRobinTableProps) => {
   const [results, setResults] = useState<RoundRobinResult[]>([])
 
@@ -309,6 +313,17 @@ const RoundRobinTable = ({
         bg="whiteAlpha.200"
         borderRadius="full"
       />
+      {onShareScoreboard && (
+        <Button
+          leftIcon={<LinkIcon />}
+          variant="outline"
+          size="sm"
+          colorScheme="cyan"
+          onClick={onShareScoreboard}
+        >
+          Scoreboard teilen
+        </Button>
+      )}
     </HStack>
   </HStack>
 </CardHeader>
@@ -343,7 +358,7 @@ const RoundRobinTable = ({
                         <SvgRoundRobinBoard
                           matches={currentMatchesList}
                           columns={Math.min(3, currentMatchesList.length)}
-                          allowEditing
+                          allowEditing={!isReadOnly}
                           onScoreUpdate={handleSvgScoreUpdate}
                         />
                       </Box>
@@ -479,18 +494,19 @@ const RoundRobinTable = ({
           </TabPanels>
         </Tabs>
 
-        {/* Action Buttons */}
-        <Center p={6} bg="gray.50">
-          <Button
-            leftIcon={<ArrowBackIcon />}
-            colorScheme="blue"
-            variant="outline"
-            size="lg"
-            onClick={onBack}
-          >
-            Neue Einstellungen
-          </Button>
-        </Center>
+        {!isReadOnly && (
+          <Center p={6} bg="gray.50">
+            <Button
+              leftIcon={<ArrowBackIcon />}
+              colorScheme="blue"
+              variant="outline"
+              size="lg"
+              onClick={onBack}
+            >
+              Neue Einstellungen
+            </Button>
+          </Center>
+        )}
       </CardBody>
     </Card>
   )

@@ -14,6 +14,7 @@ import {
   saveTournamentToCache
 } from '../utils/cache'
 import { assignAutomaticSeeding } from '../utils/tournamentSeeding'
+import type { TournamentSnapshotPayload } from '../utils/shareLink'
 
 export const DEFAULT_TOURNAMENT_SETTINGS: TournamentSettings = {
   format: 'best-of-3',
@@ -46,6 +47,7 @@ interface UseTournamentStateResult {
   loadCachedTournament: () => void
   startNewTournament: () => void
   dismissCacheAlert: () => void
+  loadSnapshot: (snapshot: TournamentSnapshotPayload) => void
 }
 
 export const useTournamentState = (
@@ -139,6 +141,14 @@ export const useTournamentState = (
     setShowCacheAlert(false)
   }, [])
 
+  const loadSnapshot = useCallback((snapshot: TournamentSnapshotPayload) => {
+    setCurrentPhase(snapshot.phase ?? 'tournament')
+    setPlayers(snapshot.players ?? [])
+    setSettings(snapshot.settings ?? createDefaultSettings())
+    setMatches(snapshot.matches ?? [])
+    setShowCacheAlert(false)
+  }, [])
+
   return useMemo(
     () => ({
       currentPhase,
@@ -156,7 +166,8 @@ export const useTournamentState = (
       handleBackToSettings,
       loadCachedTournament,
       startNewTournament,
-      dismissCacheAlert
+      dismissCacheAlert,
+      loadSnapshot
     }), [
       currentPhase,
       players,
@@ -170,7 +181,8 @@ export const useTournamentState = (
       handleBackToSettings,
       loadCachedTournament,
       startNewTournament,
-      dismissCacheAlert
+      dismissCacheAlert,
+      loadSnapshot
     ]
   )
 }
