@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { useTournamentLogic } from '../useTournamentLogic'
+import { useTournamentLogic, type UseTournamentLogicProps } from '../useTournamentLogic'
 import type { Match, Player, TournamentSettings } from '../../types'
 
 const createPlayers = (count: number): Player[] =>
@@ -29,7 +29,7 @@ describe('useTournamentLogic', () => {
     const players = createPlayers(4)
     const onMatchesUpdate = vi.fn()
 
-    const { result } = renderHook(props => useTournamentLogic(props), {
+    const { result } = renderHook((props: UseTournamentLogicProps) => useTournamentLogic(props), {
       initialProps: {
         players,
         settings: defaultSettings,
@@ -64,7 +64,7 @@ describe('useTournamentLogic', () => {
 
   it('updates match scores respecting the format and locks finished matches', async () => {
     const players = createPlayers(4)
-    const { result } = renderHook(props => useTournamentLogic(props), {
+    const { result } = renderHook((props: UseTournamentLogicProps) => useTournamentLogic(props), {
       initialProps: {
         players,
         settings: defaultSettings,
@@ -101,7 +101,7 @@ describe('useTournamentLogic', () => {
 
   it('propagates winners to later rounds and exposes the champion after the final', async () => {
     const players = createPlayers(4)
-    const { result } = renderHook(props => useTournamentLogic(props), {
+    const { result } = renderHook((props: UseTournamentLogicProps) => useTournamentLogic(props), {
       initialProps: {
         players,
         settings: defaultSettings,
@@ -147,7 +147,7 @@ describe('useTournamentLogic', () => {
 
   it('returns contextual names for each round size', async () => {
     const players = createPlayers(8)
-    const { result } = renderHook(props => useTournamentLogic(props), {
+    const { result } = renderHook((props: UseTournamentLogicProps) => useTournamentLogic(props), {
       initialProps: {
         players,
         settings: defaultSettings,

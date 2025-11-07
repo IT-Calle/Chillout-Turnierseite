@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Player, Match, TournamentSettings } from '../types'
 
-interface UseTournamentLogicProps {
+export interface UseTournamentLogicProps {
   players: Player[]
   settings: TournamentSettings
   matches: Match[]

@@ -189,7 +189,6 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
     const scoreBoxX = stackX + CONTROL_SIZE + CONTROL_GAP
     const plusX = scoreBoxX + SCORE_BOX_WIDTH + CONTROL_GAP
     const rowHeight = Math.max(SCORE_HEIGHT, CONTROL_SIZE)
-    const centerY = stackY + rowHeight / 2
     const controlOffset = (rowHeight - CONTROL_SIZE) / 2
     const scoreOffsetY = (rowHeight - SCORE_HEIGHT) / 2
     const minusY = stackY + controlOffset
