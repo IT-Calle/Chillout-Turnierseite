@@ -21,7 +21,7 @@ import {
 
   Divider,
 } from '@chakra-ui/react'
-import { AddIcon, DeleteIcon, InfoIcon } from '@chakra-ui/icons'
+import { AddIcon, DeleteIcon, InfoIcon, EditIcon, CheckIcon } from '@chakra-ui/icons'
 import type { Player } from '../types'
 
 interface PlayerManagementProps {
@@ -33,6 +33,8 @@ interface PlayerManagementProps {
 const PlayerManagement = ({ players, onPlayersChange, onConfirm }: PlayerManagementProps) => {
   const [newPlayerName, setNewPlayerName] = useState('')
   const [error, setError] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState('')
 
   const addPlayer = () => {
     if (!newPlayerName.trim()) {
@@ -59,6 +61,37 @@ const PlayerManagement = ({ players, onPlayersChange, onConfirm }: PlayerManagem
   const removePlayer = (playerId: string) => {
     const updatedPlayers = players.filter(player => player.id !== playerId)
     onPlayersChange(updatedPlayers)
+  }
+
+  const startEditing = (player: Player) => {
+    setEditingId(player.id)
+    setEditingName(player.name)
+    setError('')
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setEditingName('')
+  }
+
+  const commitEditing = () => {
+    if (!editingId) return
+    const trimmed = editingName.trim()
+    if (!trimmed) {
+      setError('Bitte einen Spielernamen eingeben')
+      return
+    }
+
+    if (players.some(p => p.id !== editingId && p.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError('Dieser Spielername existiert bereits')
+      return
+    }
+
+    const updatedPlayers = players.map(p => (p.id === editingId ? { ...p, name: trimmed } : p))
+    onPlayersChange(updatedPlayers)
+    setEditingId(null)
+    setEditingName('')
+    setError('')
   }
 
   const handleConfirm = () => {
@@ -173,9 +206,46 @@ const PlayerManagement = ({ players, onPlayersChange, onConfirm }: PlayerManagem
                       >
                         {index + 1}
                       </Badge>
-                      <Text flex={1} fontSize="lg" fontWeight="medium" color="gray.700">
-                        {player.name}
-                      </Text>
+                      {editingId === player.id ? (
+                        <Input
+                          flex={1}
+                          size="md"
+                          variant="filled"
+                          value={editingName}
+                          onChange={e => setEditingName(e.target.value)}
+                          onBlur={commitEditing}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') commitEditing()
+                            if (e.key === 'Escape') cancelEditing()
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <Text flex={1} fontSize="lg" fontWeight="medium" color="gray.700">
+                          {player.name}
+                        </Text>
+                      )}
+                      {editingId === player.id ? (
+                        <IconButton
+                          onClick={commitEditing}
+                          aria-label="Namen speichern"
+                          icon={<CheckIcon />}
+                          colorScheme="green"
+                          variant="ghost"
+                          size="sm"
+                          ml={2}
+                        />
+                      ) : (
+                        <IconButton
+                          onClick={() => startEditing(player)}
+                          aria-label="Spieler bearbeiten"
+                          icon={<EditIcon />}
+                          colorScheme="blue"
+                          variant="ghost"
+                          size="sm"
+                          mr={1}
+                        />
+                      )}
                       <IconButton
                         onClick={() => removePlayer(player.id)}
                         aria-label="Spieler entfernen"
