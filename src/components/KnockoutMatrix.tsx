@@ -81,6 +81,8 @@ const KnockoutMatrix: React.FC<KnockoutMatrixProps> = ({
           currentRound={currentRound}
           onScoreUpdate={handleScoreUpdate}
           getRoundName={getRoundName}
+          backgroundLogoUrl="/chillout-logo.png"
+          backgroundOpacity={0.08}
         />
 
         {rounds.length === 0 && (
