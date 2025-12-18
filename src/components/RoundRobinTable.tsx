@@ -345,6 +345,8 @@ const RoundRobinTable = ({
                           columns={Math.min(3, currentMatchesList.length)}
                           allowEditing
                           onScoreUpdate={handleSvgScoreUpdate}
+                          backgroundLogoUrl="/chillout-logo.png"
+                          backgroundOpacity={0.06}
                         />
                       </Box>
                     </Box>
@@ -386,6 +388,8 @@ const RoundRobinTable = ({
                           columns={Math.min(4, Math.max(1, completedMatchesList.length))}
                           allowEditing={false}
                           onScoreUpdate={handleSvgScoreUpdate}
+                          backgroundLogoUrl="/chillout-logo.png"
+                          backgroundOpacity={0.06}
                         />
                       </Box>
                     </Box>
@@ -406,19 +410,19 @@ const RoundRobinTable = ({
             <TabPanel p={6}>
               <Table variant="simple" size="lg">
                 <Thead>
-                  <Tr bg="gray.50">
-                    <Th color="blue.800" fontWeight="bold">Pos.</Th>
-                    <Th color="blue.800" fontWeight="bold">Spieler</Th>
-                    <Th color="blue.800" fontWeight="bold" isNumeric>Spiele</Th>
-                    <Th color="blue.800" fontWeight="bold" isNumeric>Siege</Th>
-                    <Th color="blue.800" fontWeight="bold" isNumeric>Niederlagen</Th>
-                    <Th color="blue.800" fontWeight="bold" isNumeric>Punkte</Th>
-                    <Th color="blue.800" fontWeight="bold">Status</Th>
+                  <Tr rounded="lg">
+                    <Th color="blue.400" fontWeight="bold">Pos.</Th>
+                    <Th color="blue.400" fontWeight="bold">Spieler</Th>
+                    <Th color="blue.400" fontWeight="bold" isNumeric>Spiele</Th>
+                    <Th color="blue.400" fontWeight="bold" isNumeric>Siege</Th>
+                    <Th color="blue.400" fontWeight="bold" isNumeric>Niederlagen</Th>
+                    <Th color="blue.400" fontWeight="bold" isNumeric>Punkte</Th>
+                    <Th color="blue.400" fontWeight="bold">Status</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
                   {results.map((result) => (
-                    <Tr key={result.player.id} _hover={{ bg: 'gray.50' }}>
+                    <Tr key={result.player.id} >
                       <Td>
                         <HStack>
                           <Text fontSize="lg">
@@ -430,12 +434,12 @@ const RoundRobinTable = ({
                         </HStack>
                       </Td>
                       <Td>
-                        <Text fontWeight="semibold" color="blue.800">
+                        <Text fontWeight="semibold" color="white">
                           {result.player.name}
                         </Text>
                       </Td>
                       <Td isNumeric>
-                        <Text color="blue.700">{result.matches}</Text>
+                        <Text color="white">{result.matches}</Text>
                       </Td>
                       <Td isNumeric>
                         <Text color="green.600" fontWeight="semibold">
@@ -480,7 +484,7 @@ const RoundRobinTable = ({
         </Tabs>
 
         {/* Action Buttons */}
-        <Center p={6} bg="gray.50">
+        <Center rounded={"xl"} p={6} >
           <Button
             leftIcon={<ArrowBackIcon />}
             colorScheme="blue"

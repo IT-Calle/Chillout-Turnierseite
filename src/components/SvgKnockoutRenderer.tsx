@@ -16,6 +16,8 @@ interface SvgKnockoutRendererProps {
   currentRound: number
   onScoreUpdate: ScoreUpdateHandler
   getRoundName: (roundIndex: number) => string
+  backgroundLogoUrl?: string
+  backgroundOpacity?: number
 }
 
 interface Selection {
@@ -27,7 +29,9 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
   rounds,
   currentRound,
   onScoreUpdate,
-  getRoundName
+  getRoundName,
+  backgroundLogoUrl,
+  backgroundOpacity = 0.08,
 }) => {
   const [selection, setSelection] = useState<Selection>({ roundIdx: 0, matchIdx: 0 })
 
@@ -187,6 +191,17 @@ const SvgKnockoutRenderer: React.FC<SvgKnockoutRendererProps> = ({
           <stop offset="100%" stopColor="#0ea5e9" />
         </linearGradient>
       </defs>
+      {/* Optionales Wasserzeichen-Bild */}
+      {backgroundLogoUrl && (
+        <image
+          href={backgroundLogoUrl}
+          x={(layout.width * 0.5) - (layout.width * 0.35) / 2}
+          y={(layout.height * 0.5) - (layout.height * 0.35) / 2}
+          width={layout.width * 0.35}
+          preserveAspectRatio="xMidYMid meet"
+          opacity={backgroundOpacity}
+        />
+      )}
       <rect width="100%" height="100%" fill="url(#grid)" />
 
       {rounds.map((round, roundIdx) => {

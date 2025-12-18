@@ -13,6 +13,7 @@ import {
   AlertDescription,
   CloseButton,
   useDisclosure,
+  Image,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -132,14 +133,21 @@ function App() {
           px={8}
         >
           <VStack spacing={4}>
-            <Heading
+            <Image
+              src="/chillout-logo.png"
+              alt="Chillout Logo"
+              maxW="20%"
+              height="auto"
+              objectFit="contain"
+            />
+{/*            <Heading
               size="2xl"
               color="white"
               textAlign="center"
               textShadow="2px 2px 4px rgba(0, 0, 0, 0.3)"
             >
               🎯 {tournamentName}
-            </Heading>
+            </Heading> */}
             
             <HStack spacing={4} flexWrap="wrap" justify="center">
               <Badge

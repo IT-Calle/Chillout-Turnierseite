@@ -16,6 +16,8 @@ interface SvgRoundRobinBoardProps {
   columns?: number
   allowEditing?: boolean
   onScoreUpdate: ScoreUpdateHandler
+  backgroundLogoUrl?: string
+  backgroundOpacity?: number
 }
 
 const SvgRoundRobinBoard: React.FC<SvgRoundRobinBoardProps> = ({
@@ -23,6 +25,8 @@ const SvgRoundRobinBoard: React.FC<SvgRoundRobinBoardProps> = ({
   columns = 2,
   allowEditing = true,
   onScoreUpdate,
+  backgroundLogoUrl,
+  backgroundOpacity = 0.08,
 }) => {
   const columnWidth = CARD_WIDTH + (HORIZONTAL_SPACING - CARD_WIDTH)
   const rowHeight = CARD_HEIGHT + VERTICAL_SPACING + 16
@@ -59,6 +63,16 @@ const SvgRoundRobinBoard: React.FC<SvgRoundRobinBoardProps> = ({
           <stop offset="100%" stopColor="#0ea5e9" />
         </linearGradient>
       </defs>
+      {backgroundLogoUrl && (
+        <image
+          href={backgroundLogoUrl}
+          x={(width * 0.5) - (width * 0.35) / 2}
+          y={(height * 0.5) - (height * 0.35) / 2}
+          width={width * 0.35}
+          preserveAspectRatio="xMidYMid meet"
+          opacity={backgroundOpacity}
+        />
+      )}
       <rect width="100%" height="100%" fill="url(#rr-grid)" />
 
       {matches.map((match, index) => {
