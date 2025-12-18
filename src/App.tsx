@@ -49,7 +49,6 @@ function App() {
     startNewTournament,
     dismissCacheAlert
   } = useTournamentState()
-  const tournamentName = 'Dart Turnier'
 
   const handleRestartConfirmation = () => {
     startNewTournament()
