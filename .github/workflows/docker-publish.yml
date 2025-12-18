@@ -2,7 +2,7 @@ name: Build & Push Docker image to GHCR
 
 on:
   push:
-    branches: [ "kubernetes" ]
+    branches: [ "main" ]
 
 permissions:
   contents: read
