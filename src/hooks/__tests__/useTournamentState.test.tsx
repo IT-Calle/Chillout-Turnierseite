@@ -58,7 +58,8 @@ describe('useTournamentState', () => {
     const cachedSettings: TournamentSettings = {
       format: 'best-of-3',
       hasPointsRound: false,
-      seedingType: 'automatic'
+      seedingType: 'automatic',
+      machineCount: 2
     }
 
     mockedHasCachedTournament.mockReturnValue(true)
@@ -81,7 +82,8 @@ describe('useTournamentState', () => {
     const cachedSettings: TournamentSettings = {
       format: 'best-of-5',
       hasPointsRound: true,
-      seedingType: 'manual'
+      seedingType: 'manual',
+      machineCount: 3
     }
 
     mockedLoadTournamentFromCache.mockReturnValue({
@@ -109,7 +111,8 @@ describe('useTournamentState', () => {
     const automaticSettings: TournamentSettings = {
       format: 'best-of-3',
       hasPointsRound: false,
-      seedingType: 'automatic'
+      seedingType: 'automatic',
+      machineCount: 2
     }
 
     const { result } = renderHook(() => useTournamentState({ randomFn: () => 0 }))
@@ -153,5 +156,26 @@ describe('useTournamentState', () => {
     expect(result.current.players).toEqual([])
     expect(result.current.matches).toEqual([])
     expect(result.current.settings).toEqual(DEFAULT_TOURNAMENT_SETTINGS)
+  })
+
+  it('preserves players when navigating back to player management', () => {
+    const { result } = renderHook(() => useTournamentState())
+
+    act(() => {
+      result.current.setPlayers(playersFixture)
+    })
+
+    act(() => {
+      result.current.handlePlayersConfirm(playersFixture)
+    })
+
+    // Navigate back from settings to player management
+    act(() => {
+      result.current.handleBackToPlayerManagement()
+    })
+
+    expect(result.current.currentPhase).toBe('player-management')
+    expect(result.current.players).toEqual(playersFixture)
+    expect(result.current.matches).toEqual([])
   })
 })

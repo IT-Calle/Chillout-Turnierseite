@@ -7,6 +7,11 @@ import {
   VStack,
   HStack,
   Text,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
   Radio,
   RadioGroup,
   Stack,
@@ -47,6 +52,12 @@ const TournamentSettingsComponent = ({
 
   const handleSeedingChange = (seedingType: 'manual' | 'automatic') => {
     const newSettings = { ...settings, seedingType }
+    onSettingsChange(newSettings)
+  }
+
+  const handleMachineCountChange = (value: string | number) => {
+    const count = typeof value === 'string' ? parseInt(value, 10) : value
+    const newSettings = { ...settings, machineCount: Math.max(1, Math.min(16, count || 1)) }
     onSettingsChange(newSettings)
   }
 
@@ -224,6 +235,28 @@ const TournamentSettingsComponent = ({
                 </Stack>
               </RadioGroup>
             </Box>
+
+            {/* Dartautomaten */}
+            <Box>
+              <Heading size="md" mb={4} color="gray.700">
+                Dartautomaten
+              </Heading>
+              <VStack align="start" spacing={4}>
+                <Text color="gray.600">Anzahl verfügbarer Automaten (1–16)</Text>
+                <NumberInput
+                  value={settings.machineCount}
+                  min={1}
+                  max={16}
+                  onChange={(_, valueNumber) => handleMachineCountChange(valueNumber)}
+                >
+                  <NumberInputField />
+                  <NumberInputStepper>
+                    <NumberIncrementStepper />
+                    <NumberDecrementStepper />
+                  </NumberInputStepper>
+                </NumberInput>
+              </VStack>
+            </Box>
           </SimpleGrid>
 
           <Divider />
@@ -249,6 +282,11 @@ const TournamentSettingsComponent = ({
                 <ListItem>
                   <Text>
                     <strong>Auslosung:</strong> {settings.seedingType === 'automatic' ? 'Automatisch' : 'Manuell'}
+                  </Text>
+                </ListItem>
+                <ListItem>
+                  <Text>
+                    <strong>Automaten:</strong> {settings.machineCount}
                   </Text>
                 </ListItem>
               </List>

@@ -18,7 +18,8 @@ import { assignAutomaticSeeding } from '../utils/tournamentSeeding'
 export const DEFAULT_TOURNAMENT_SETTINGS: TournamentSettings = {
   format: 'best-of-3',
   hasPointsRound: false,
-  seedingType: 'automatic'
+  seedingType: 'automatic',
+  machineCount: 2
 }
 
 const createDefaultSettings = (): TournamentSettings => ({
@@ -126,7 +127,6 @@ export const useTournamentState = (
 
   const handleBackToPlayerManagement = useCallback(() => {
     setCurrentPhase('player-management')
-    setPlayers([])
     setMatches([])
   }, [])
 

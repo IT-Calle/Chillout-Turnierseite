@@ -104,9 +104,21 @@ const RoundRobinTable = ({
       !playersInCurrentMatches.has(p.id) && !eliminatedPlayers.has(p.id)
     )
     
-    // Erstelle neue Matches für verfügbare Spieler
+    // Erstelle neue Matches für verfügbare Spieler bis zur freien Automatenkapazität
     const newMatches: Match[] = [...matches]
     const usedInNewMatches = new Set<string>()
+
+    // Bestimme aktuell belegte Automaten und verfügbare Slots
+    const machineCount = settings.machineCount ?? 1
+    const occupiedMachines = new Set<number>(
+      newMatches
+        .filter(m => !m.isFinished && m.assignedMachine && m.assignedMachine >= 1 && m.assignedMachine <= machineCount)
+        .map(m => m.assignedMachine as number)
+    )
+    const freeMachines: number[] = []
+    for (let i = 1; i <= machineCount; i++) {
+      if (!occupiedMachines.has(i)) freeMachines.push(i)
+    }
     
     for (const pairing of allPossibleMatches) {
       const matchupKey = `${pairing.p1.id}-${pairing.p2.id}`
@@ -119,6 +131,12 @@ const RoundRobinTable = ({
           availablePlayers.some(p => p.id === pairing.p2.id) &&
           !usedInNewMatches.has(pairing.p1.id) &&
           !usedInNewMatches.has(pairing.p2.id)) {
+        // Nur erstellen, wenn ein freier Automat verfügbar ist
+        const nextMachine = freeMachines.shift()
+        if (!nextMachine) {
+          // Keine freien Automaten -> keine weiteren neuen Matches erzeugen
+          break
+        }
         
         const newMatch: Match = {
           id: crypto.randomUUID(),
@@ -126,7 +144,8 @@ const RoundRobinTable = ({
           player2: pairing.p2,
           player1Score: 0,
           player2Score: 0,
-          isFinished: false
+          isFinished: false,
+          assignedMachine: nextMachine
         }
         
         newMatches.push(newMatch)
@@ -134,16 +153,35 @@ const RoundRobinTable = ({
         usedInNewMatches.add(pairing.p1.id)
         usedInNewMatches.add(pairing.p2.id)
         
-        // Nur ein Match pro verfügbarem Spielerpaar erstellen
-        break
+        // Erzeuge ggf. weitere bis Automaten ausgelastet
+        if (freeMachines.length === 0) {
+          break
+        }
       }
     }
     
-    // Update nur wenn sich etwas geändert hat
-    if (newMatches.length !== matches.length) {
-      onMatchesUpdate(newMatches)
+    // Greedy-Neuzuordnung: Weise freien Wartematches ggf. Automaten zu
+    const occupiedAfter = new Set<number>(
+      newMatches
+        .filter(m => !m.isFinished && m.assignedMachine && m.assignedMachine >= 1 && m.assignedMachine <= machineCount)
+        .map(m => m.assignedMachine as number)
+    )
+    const freeAfter: number[] = []
+    for (let i = 1; i <= machineCount; i++) {
+      if (!occupiedAfter.has(i)) freeAfter.push(i)
     }
-  }, [players, matches, getEliminatedPlayers, onMatchesUpdate])
+    const reassigned = newMatches.map(m => {
+      if (m.isFinished) return m
+      if (m.assignedMachine && m.assignedMachine >= 1 && m.assignedMachine <= machineCount) return m
+      const next = freeAfter.shift()
+      return next ? { ...m, assignedMachine: next } : m
+    })
+
+    // Update nur wenn sich etwas geändert hat
+    if (reassigned.length !== matches.length || reassigned.some((m, i) => m !== matches[i])) {
+      onMatchesUpdate(reassigned)
+    }
+  }, [players, matches, getEliminatedPlayers, onMatchesUpdate, settings.machineCount])
 
   // Berechne Tabelle basierend auf Matches
   useEffect(() => {

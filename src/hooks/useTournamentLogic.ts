@@ -67,6 +67,24 @@ export const useTournamentLogic = ({
       round: match.round ?? 1
     }))
 
+    // Weise Maschinen für laufende Matches der ersten Runde zu (greedy)
+    const machineCount = settings.machineCount ?? 1
+    const usedMachines = new Set<number>(
+      firstRoundMatches
+        .filter(m => !m.isFinished && m.assignedMachine && m.assignedMachine >= 1 && m.assignedMachine <= machineCount)
+        .map(m => m.assignedMachine as number)
+    )
+    const availableMachines: number[] = []
+    for (let i = 1; i <= machineCount; i++) {
+      if (!usedMachines.has(i)) availableMachines.push(i)
+    }
+    const assignedFirstRound = firstRoundMatches.map(m => {
+      if (m.isFinished) return m
+      if (m.assignedMachine && m.assignedMachine >= 1 && m.assignedMachine <= machineCount) return m
+      const nextMachine = availableMachines.shift()
+      return nextMachine ? { ...m, assignedMachine: nextMachine } : m
+    })
+
     const allRounds: Match[][] = [firstRoundMatches]
     let matchesInRound = firstRoundMatches.length
     let nextRoundNumber = 2
@@ -83,10 +101,10 @@ export const useTournamentLogic = ({
 
     setRounds(allRounds)
 
-    if (!hasExistingMatches && firstRoundMatches.length > 0) {
-      onMatchesUpdate(firstRoundMatches)
+    if (!hasExistingMatches && assignedFirstRound.length > 0) {
+      onMatchesUpdate(assignedFirstRound)
     }
-  }, [players, matches, onMatchesUpdate])
+  }, [players, matches, onMatchesUpdate, settings.machineCount])
 
   // Bestimme aktuelle Runde
   useEffect(() => {

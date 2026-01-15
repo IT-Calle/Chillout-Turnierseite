@@ -15,12 +15,14 @@ export interface Match {
   isFinished: boolean;
   winner?: Player;
   round?: number; // Für KO-Turniere
+  assignedMachine?: number; // Zugewiesene Dartmaschine (1..machineCount)
 }
 
 export interface TournamentSettings {
   format: 'best-of-3' | 'best-of-5';
   hasPointsRound: boolean; // Ob es eine Punktevorrunde gibt
   seedingType: 'manual' | 'automatic';
+  machineCount: number; // Anzahl der verfügbaren Dartautomaten
 }
 
 export interface Tournament {

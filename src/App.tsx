@@ -139,14 +139,6 @@ function App() {
               height="auto"
               objectFit="contain"
             />
-{/*            <Heading
-              size="2xl"
-              color="white"
-              textAlign="center"
-              textShadow="2px 2px 4px rgba(0, 0, 0, 0.3)"
-            >
-              🎯 {tournamentName}
-            </Heading> */}
             
             <HStack spacing={4} flexWrap="wrap" justify="center">
               <Badge
