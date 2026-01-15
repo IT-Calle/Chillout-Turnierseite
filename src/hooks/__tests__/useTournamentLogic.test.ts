@@ -13,7 +13,8 @@ const createPlayers = (count: number): Player[] =>
 const defaultSettings: TournamentSettings = {
   format: 'best-of-3',
   hasPointsRound: false,
-  seedingType: 'automatic'
+  seedingType: 'automatic',
+  machineCount: 2
 }
 
 describe('useTournamentLogic', () => {
